@@ -28,7 +28,7 @@ jobs:
       - name: Commit generated reports
         shell: bash
         run: |
-          if git diff --quiet -- classified; then
+          if [ -z "$(git status --porcelain -- classified)" ]; then
             echo "No report changes."
             exit 0
           fi
