@@ -5,6 +5,7 @@ on:
     paths:
       - '花花最终版.conf'
       - 'tools/analyze_config.py'
+      - '.github/workflows/classify.yml'
   workflow_dispatch:
 
 permissions:
