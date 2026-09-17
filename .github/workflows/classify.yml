@@ -5,6 +5,7 @@ on:
     paths:
       - '花花最终版.conf'
       - 'tools/analyze_config.py'
+      - 'tools/deep_analyze.py'
       - '.github/workflows/classify.yml'
   workflow_dispatch:
 
@@ -24,7 +25,9 @@ jobs:
           python-version: '3.x'
 
       - name: Analyze config
-        run: python tools/analyze_config.py
+        run: |
+          python tools/analyze_config.py
+          python tools/deep_analyze.py
 
       - name: Commit generated reports
         shell: bash
