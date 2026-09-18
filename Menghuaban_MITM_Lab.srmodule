@@ -1,0 +1,48 @@
+#!name=Menghuaban MITM Lab
+#!desc=可选实验模块：只做广告/追踪接口拦截与 HTTPS 内容重写；不碰支付、登录、会员解锁。
+#!author=Menghuaban
+#!category=MITM Lab
+#!homepage=https://github.com/menghuaban520/shadowrocket-config
+#!raw-url=https://raw.githubusercontent.com/menghuaban520/shadowrocket-config/main/Menghuaban_MITM_Lab.srmodule
+
+# ============================================================
+# 说明
+# - 独立于主配置，可随时关闭。
+# - 只 MITM 下面 hostname 白名单里的域名。
+# - 不包含银行、支付宝、微信登录、Apple ID、支付、会员解锁规则。
+# - 某些 App 使用证书锁定（certificate pinning）时，MITM 可能无效或导致该接口报错。
+# ============================================================
+
+[Rule]
+# 字节系广告 / 日志域名
+DOMAIN,ad.zijieapi.com,REJECT
+DOMAIN,applog.zijieapi.com,REJECT
+DOMAIN-SUFFIX,dm.bytedance.com,REJECT
+DOMAIN-SUFFIX,extlog.snssdk.com,REJECT
+DOMAIN-SUFFIX,sdfp.snssdk.com,REJECT
+DOMAIN-SUFFIX,track.toutiao.com,REJECT
+DOMAIN-SUFFIX,dsp.toutiao.com,REJECT
+DOMAIN-SUFFIX,dm.pstatp.com,REJECT
+
+[URL Rewrite]
+# 字节系已知广告 API：直接拒绝
+^https?:\/\/[^\/]+\.amemv\.com\/aweme\/v[0-9]+\/ad\/ - reject
+^https?:\/\/[^\/]+\.snssdk\.com\/[^?]*_ad\/ - reject
+
+[Map Local]
+# 某些广告接口返回空正文，避免 App 因硬错误反复重试
+^https?:\/\/[^\/]+\.(amemv|snssdk)\.com\/(api|motor)\/ad\/ data-type=text data=" "
+
+# 日志 / 统计接口返回极小图片
+^https?:\/\/[^\/]+\.amemv\.com\/[^?]*(app_log|report|stats) data-type=tiny-gif
+
+[Body Rewrite]
+# Bilibili：清空开屏广告集合；不碰会员、支付、账号状态
+http-response-jq ^https:\/\/app\.bilibili\.com\/x\/v2\/splash\/(list|show|event\/list2)\? '.data |= with_entries(if (.key == "show" or .key == "event_list") then .value = [] else . end)'
+
+# Bilibili：首页只过滤明确带 ad_info 的条目
+http-response-jq ^https:\/\/app\.bilibili\.com\/x\/v2\/feed\/index\? 'if .data.items then .data.items |= map(select(.ad_info == null)) else . end'
+
+[MITM]
+enable = true
+hostname = %APPEND% app.bilibili.com,*.amemv.com,*.snssdk.com,*.pstatp.com,dsp.toutiao.com,ad.zijieapi.com,applog.zijieapi.com
